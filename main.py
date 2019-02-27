@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import numpy as np
 
@@ -6,7 +6,9 @@ from utils import *
 
 
 def main():
-    pass
+    rows, columns, min_ingredients, max_cells = ints()
+    pizza = [input() for _ in range(rows)]
+    err(pizza)
 
 
 if __name__ == '__main__':
