@@ -30,7 +30,9 @@ def run(model, dataset):
             stderr=subprocess.PIPE,
             encoding='utf8',
         )
-        err(process)
+        # err(process)
+        if process.returncode != 0:
+            err(f"returncode={process.returncode}")
         err(f"{bcolors.OKBLUE}stdout:{bcolors.ENDC} {process.stdout}")
         err(f"{bcolors.WARNING}stderr:{bcolors.ENDC} {process.stderr}")
 
