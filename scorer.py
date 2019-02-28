@@ -3,17 +3,6 @@
 from utils import *
 
 
-class Photo:
-    def __init__(self, vertical, tags):
-        self.vertical = vertical
-        self.tags = tags
-
-
-def parse_photo(line):
-    h, _, *tags = line.split()
-    return Photo(h == 'V', set(tags))
-
-
 def get_tags(photos: [Photo], slide: [int]):
     if len(slide) == 1:
         return photos[slide[0]].tags
@@ -28,7 +17,7 @@ def main():
     sub = open(sub_file)
 
     photo_count = int(ds.readline())
-    photos = [parse_photo(ds.readline()) for _ in range(photo_count)]
+    photos = [parse_photo(ds.readline(), id) for id in range(photo_count)]
     all_tags = set(tag for p in photos for tag in p.tags)
     err('unique tags', len(all_tags))
 
