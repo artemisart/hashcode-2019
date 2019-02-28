@@ -15,20 +15,26 @@ def run():
 
     photos = filter(lambda p: p.vertical, photos_all)
     photos = sorted(photos, key=lambda p: len(p.tags), reverse=True)
-    err('Number of verticals : ', len(photos))
-    err('Min tags :', len(photos[-1].tags))
-    err('Max tags :', len(photos[0].tags))
 
     slides = []
-    v1 = photos.pop(0)
-    while len(photos) > 1:
-        closest, furthest = get_closest_and_furthest_photo(v1.tags, photos)
-        photos.remove(closest)
-        photos.remove(furthest)
-        slides.append((furthest, v1))
-        v1 = closest
 
-    slides.append((photos[0], v1))
+    if len(photos) > 0:
+        err('Number of verticals : ', len(photos))
+        err('Min tags :', len(photos[-1].tags))
+        err('Max tags :', len(photos[0].tags))
+
+        v1 = photos.pop(0)
+        tbar = tqdm(total=len(photos) / 2)
+
+        while len(photos) > 1:
+            tbar.update()
+            closest, furthest = get_closest_and_furthest_photo(v1.tags, photos)
+            photos.remove(closest)
+            photos.remove(furthest)
+            slides.append((furthest, v1))
+            v1 = closest
+
+        slides.append((photos[0], v1))
 
     photos_h = filter(lambda p: not p.vertical, photos_all)
     photos_h = sorted(photos_h, key=lambda p: len(p.tags), reverse=True)
