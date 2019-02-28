@@ -3,14 +3,6 @@
 from utils import *
 
 
-def get_tags(photos: [Photo], slide: [int]):
-    if len(slide) == 1:
-        return photos[slide[0]].tags
-    elif len(slide) == 2:
-        return photos[slide[0]].tags | photos[slide[1]].tags
-    raise ValueError(f"slide != 1 or 2 photos: {slide}")
-
-
 def main():
     ds_file, sub_file = sys.argv[1:]
     ds = open(ds_file)
@@ -42,12 +34,7 @@ def main():
 
     score = 0
     for a, b in zip(slides, slides[1:]):
-        a_tags = get_tags(photos, a)
-        b_tags = get_tags(photos, b)
-        common = len(a_tags & b_tags)
-        in_a_not_b = len(a_tags - b_tags)
-        not_a_in_b = len(b_tags - a_tags)
-        score += min(common, in_a_not_b, not_a_in_b)
+        score += calc_score(photos, a, b)
     err('score', score)
     print(score)
 

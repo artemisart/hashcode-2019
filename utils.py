@@ -17,6 +17,23 @@ def parse_photo(line, id):
     return Photo(orient == 'V', set(tags), id)
 
 
+def get_tags(photos: [Photo], slide: [int]):
+    if len(slide) == 1:
+        return photos[slide[0]].tags
+    elif len(slide) == 2:
+        return photos[slide[0]].tags | photos[slide[1]].tags
+    raise ValueError(f"slide != 1 or 2 photos: {slide}")
+
+
+def calc_score(photos: [Photo], slide_a: [int], slide_b: [int]):
+    a_tags = get_tags(photos, slide_a)
+    b_tags = get_tags(photos, slide_b)
+    common = len(a_tags & b_tags)
+    in_a_not_b = len(a_tags - b_tags)
+    not_a_in_b = len(b_tags - a_tags)
+    return min(common, in_a_not_b, not_a_in_b)
+
+
 def err(*args, **kw):
     """Print to stderr (but `file` can be overwritten in `**kw`)."""
     print(*args, file=sys.stderr, **kw)
