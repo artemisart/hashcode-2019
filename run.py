@@ -41,13 +41,13 @@ def main():
     files = sys.argv[1:]
     # err(files)
     models = [file for file in files if file.endswith('.py')]
-    datasets = [file for file in files if file.endswith('.in')]
+    datasets = [file for file in files if file.endswith('.txt')]
 
     if not models:
         err("no model in args (.py file)")
         exit(1)
     if not datasets:
-        err("no dataset in args (.in file)")
+        err("no dataset in args (.txt file)")
         exit(1)
 
     for file in files:
