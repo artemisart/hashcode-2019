@@ -104,7 +104,7 @@ func testDataset(c string, model string, scorer string, res *result, datafolder 
 
 	var newScore int
 	{
-		tmp, err := exec.Command(scorer, inputFileName, tmpOutputFileName).CombinedOutput()
+		tmp, err := exec.Command(scorer, inputFileName, tmpOutputFileName).Output()
 		if err != nil {
 			log.Println("Error computing new score:", err)
 			return
@@ -119,7 +119,7 @@ func testDataset(c string, model string, scorer string, res *result, datafolder 
 		if newScore > oldScore {
 			_, err := exec.Command("cp", tmpOutputFileName, outputFileName).CombinedOutput()
 			if err != nil {
-				log.Println("Failed to override the submission")
+				log.Println("Failed to override the submission:", err)
 				return
 			}
 			err = ioutil.WriteFile(scoreFileName, tmp, 0777)
