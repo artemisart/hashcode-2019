@@ -51,6 +51,7 @@ func main() {
 	model := flag.String("model", "./main.sh", "model file")
 	scorer := flag.String("scorer", "./scorer.sh", "scorer file")
 	datafolder := flag.String("datafolder", "data", "folder containing datasets")
+	submissionsfolder := flag.String("submissionsfolder", "submissions", "folder containing submissions")
 
 	flag.Parse()
 
@@ -58,7 +59,7 @@ func main() {
 	for i, c := range *datasets {
 		results[i] = result{-1, -1, nokred("worse")}
 		wg.Add(1)
-		go testDataset(string(c), *model, *scorer, &results[i], *datafolder)
+		go testDataset(string(c), *model, *scorer, &results[i], *datafolder, *submissionsfolder)
 	}
 	wg.Wait()
 
@@ -72,13 +73,13 @@ func main() {
 	resTable.Render()
 }
 
-func testDataset(c string, model string, scorer string, res *result, datafolder string) {
+func testDataset(c string, model string, scorer string, res *result, datafolder string, submissionsfolder string) {
 	defer wg.Done()
 
 	scoreFileName := datafolder + "/" + c + ".score"
 	inputFileName := datafolder + "/" + c + ".in"
-	outputFileName := datafolder + "/" + c + ".out"
-	tmpOutputFileName := datafolder + "/" + c + ".out.tmp"
+	outputFileName := submissionsfolder + "/" + c + ".out"
+	tmpOutputFileName := submissionsfolder + "-tmp" + "/" + c + ".out.tmp"
 
 	tmpOutput, err := exec.Command(model, inputFileName, tmpOutputFileName).CombinedOutput()
 	if err != nil {
