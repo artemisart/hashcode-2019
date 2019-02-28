@@ -101,6 +101,7 @@ func testDataset(c string, model string, scorer string, res *result, datafolder 
 			}
 		}
 	}
+	res.oldScore = oldScore
 
 	var newScore int
 	{
@@ -132,7 +133,6 @@ func testDataset(c string, model string, scorer string, res *result, datafolder 
 			res.status = warnorange("same")
 		}
 	}
-	res.oldScore = oldScore
 	res.newScore = newScore
 
 	modelOutput := okblue(makebold(c+", model output:")) + "\n" + string(tmpOutput)
