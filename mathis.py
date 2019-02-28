@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+from random import shuffle
 
 # import numpy as np
 
@@ -16,6 +17,8 @@ def main():
     photos = [parse_photo(input(), id) for id in range(photo_count)]
     all_tags = set(tag for p in photos for tag in p.tags)
     err('unique tags', len(all_tags))
+
+    shuffle(photos)
 
     # slides = [i for i in range(photo_count) if photos[i].vertical == False]
     slides = []
