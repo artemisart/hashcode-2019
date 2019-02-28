@@ -7,17 +7,6 @@ import sys
 from utils import *
 
 
-class Photo:
-    def __init__(self, vertical, tags):
-        self.vertical = vertical
-        self.tags = tags
-
-
-def parse_photo(line):
-    h, _, *tags = line.split()
-    return Photo(h == 'V', set(tags))
-
-
 def main():
     in_file, out_file = sys.argv[1:]
     sys.stdin = open(in_file)
