@@ -13,7 +13,7 @@ class Photo:
 
 def parse_photo(line):
     h, _, *tags = line.split()
-    return Photo(h == 'V', tags)
+    return Photo(h == 'V', set(tags))
 
 
 def main():
