@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
@@ -36,95 +37,121 @@ func makebold(s string) string {
 func okgreen(s string) string {
 	return green + s + endc
 }
+func okblue(s string) string {
+	return blue + s + endc
+}
 func warnorange(s string) string {
 	return orange + s + endc
 }
 func nokred(s string) string {
 	return red + s + endc
 }
-func okblue(s string) string {
-	return blue + s + endc
-}
 
 func main() {
-	datasets := flag.String("datasets", "ABCDE", "datasets to evaluate")
-	model := flag.String("model", "./main.sh", "model file")
-	scorer := flag.String("scorer", "./scorer.sh", "scorer file")
+	datasets := flag.String("datasets", "A", "datasets to evaluate")
+	model := flag.String("model", "./model.sh", "model model executable")
+	scorer := flag.String("scorer", "./scorer.sh", "scorer executable")
 	datafolder := flag.String("datafolder", "data", "folder containing datasets")
 	submissionsfolder := flag.String("submissionsfolder", "submissions", "folder containing submissions")
+	realtimeoutput := flag.Bool("realtimeoutput", false, "print the output of the models in stdout in real time (always the case if there is only one dataset)")
 
 	flag.Parse()
 
 	results := make([]result, len(*datasets))
-	for i, c := range *datasets {
+
+	if len(*datasets) < 2 {
+		*realtimeoutput = true
+	}
+	for i, dataset := range *datasets {
 		results[i] = result{-1, -1, nokred("worse")}
 		wg.Add(1)
-		go testDataset(string(c), *model, *scorer, &results[i], *datafolder, *submissionsfolder)
+		go testDataset(string(dataset), *model, *scorer, &results[i], *datafolder, *submissionsfolder, *realtimeoutput)
 	}
 	wg.Wait()
 
 	resTable := tablewriter.NewWriter(os.Stdout)
 	resTable.SetHeader([]string{"Test case", "Old score", "New score", "Status"})
 	resTable.SetRowLine(true)
-	for i, c := range *datasets {
+	for i, dataset := range *datasets {
 		r := results[i]
-		resTable.Append([]string{bold + string(c) + endc, strconv.Itoa(r.oldScore), strconv.Itoa(r.newScore), r.status})
+		resTable.Append([]string{makebold(string(dataset)), strconv.Itoa(r.oldScore), strconv.Itoa(r.newScore), r.status})
 	}
 	resTable.Render()
 }
 
-func testDataset(c string, model string, scorer string, res *result, datafolder string, submissionsfolder string) {
+func testDataset(dataset string, model string, scorer string, res *result, datafolder string, submissionsfolder string, realtimeoutput bool) {
 	defer wg.Done()
 
-	scoreFileName := datafolder + "/" + c + ".score"
-	inputFileName := datafolder + "/" + c + ".in"
-	outputFileName := submissionsfolder + "/" + c + ".out"
-	tmpOutputFileName := submissionsfolder + "-tmp" + "/" + c + ".out.tmp"
+	// Compute file names
+	inputFileName := fmt.Sprintf("%s/%s.in", datafolder, dataset)
+	scoreFileName := fmt.Sprintf("%s/%s.score", submissionsfolder, dataset)
+	outputFileName := fmt.Sprintf("%s/%s.out", submissionsfolder, dataset)
+	tmpOutputFileName := fmt.Sprintf("%s-tmp/%s.out.tmp", submissionsfolder, dataset)
 
-	tmpOutput, err := exec.Command(model, inputFileName, tmpOutputFileName).CombinedOutput()
-	if err != nil {
-		fmt.Println("---\nmain output for dataset " + c + ":\n" + string(tmpOutput) + "---")
-		log.Println("Error executing model:", err)
-		return
-	}
-
+	// Read oldScore
 	var oldScore int
 	{
-		tmp, err := ioutil.ReadFile(scoreFileName)
+		oldscore, err := ioutil.ReadFile(scoreFileName)
 		if err != nil {
 			log.Println("Couldn't load ", scoreFileName, ":", err)
-			oldScore = 0
 		} else {
-			oldScore, err = strconv.Atoi(strings.TrimSpace(string(tmp)))
+			oldScore, err = strconv.Atoi(strings.TrimSpace(string(oldscore)))
 			if err != nil {
-				log.Println("Couldn't parse oldScore as int: ", oldScore)
+				log.Println("Couldn't parse", scoreFileName, "as int: ", oldscore)
+				return
+			}
+			res.oldScore = oldScore
+		}
+	}
+
+	// Run the model
+	var modelOutput []byte
+	{
+		modelCmd := exec.Command(model, inputFileName, tmpOutputFileName)
+		if realtimeoutput {
+			modelCmd.Stdout, modelCmd.Stderr = os.Stdout, os.Stderr
+			err := modelCmd.Run()
+			if err != nil {
+				log.Println("Error executing model", dataset, ":", err)
+				return
+			}
+			modelOutput = []byte("See above\n")
+		} else {
+			modelOutput, err := modelCmd.CombinedOutput()
+			if err != nil {
+				log.Println("Error executing model", dataset, ":", err)
+				log.Println("model output for dataset", dataset, ":\n", string(modelOutput), "---")
 				return
 			}
 		}
 	}
-	res.oldScore = oldScore
 
+	// Compute new score
 	var newScore int
+	var scorerStderr bytes.Buffer
 	{
-		tmp, err := exec.Command(scorer, inputFileName, tmpOutputFileName).Output()
+		scorerCmd := exec.Command(scorer, inputFileName, tmpOutputFileName)
+		scorerCmd.Stderr = &scorerStderr
+		scoreout, err := scorerCmd.Output()
 		if err != nil {
 			log.Println("Error computing new score:", err)
 			return
 		}
 
-		newScore, err = strconv.Atoi(strings.TrimSpace(string(tmp)))
+		newScore, err = strconv.Atoi(strings.TrimSpace(string(scoreout)))
 		if err != nil {
-			log.Println("Couldn't parse new score as int: ", oldScore)
+			log.Println("Couldn't parse new score as int: ", string(scoreout))
 			return
 		}
 
 		if newScore > oldScore {
-			_, err := exec.Command("cp", tmpOutputFileName, outputFileName).CombinedOutput()
+			err := swapFiles(tmpOutputFileName, outputFileName)
 			if err != nil {
-				log.Println("Failed to override the submission:", err)
+				log.Println("Failed to swap output with the submission:", err)
 				return
 			}
-			err = ioutil.WriteFile(scoreFileName, tmp, 0777)
+
+			err = ioutil.WriteFile(scoreFileName, scoreout, 0777)
 			if err != nil {
 				log.Println("Error writing new score:", err)
 				return
@@ -136,6 +163,11 @@ func testDataset(c string, model string, scorer string, res *result, datafolder 
 	}
 	res.newScore = newScore
 
-	modelOutput := okblue(makebold(c+", model output:")) + "\n" + string(tmpOutput)
-	fmt.Println(modelOutput + "---")
+	// Output infos
+	fmt.Printf("%s\n%s\n%s%s\n%s",
+		okblue(makebold(fmt.Sprintf("Dataset %s finished with a score of %d.", dataset, newScore))),
+		makebold("- model stdout & stderr:"),
+		modelOutput,
+		makebold("- scorer stderr:"),
+		scorerStderr.Bytes())
 }
