@@ -2,6 +2,8 @@ import sys
 
 
 class Photo:
+    __slots__ = [ 'tags', 'vertical', 'id' ]
+
     def __init__(self, vertical, tags, id):
         self.vertical = vertical
         self.tags = tags
@@ -9,7 +11,7 @@ class Photo:
 
     def __repr__(self):
         o = 'H' if self.vertical else 'V'
-        return f'({o}, id:{self.id}, ntags:{len(self.tags)}, tags:{self.tags})'
+        return f'({o} id:{self.id} ntags:{len(self.tags)} tags:{self.tags})'
 
 
 def parse_photo(line, id):
