@@ -56,14 +56,13 @@ size_t common(const T &a, const T &b)
     return c;
 }
 
-template <class T>
-size_t score(const T &a, const T &b)
+size_t score(const Photo &a, const Photo &b)
 {
     // min(a, b, common), with a = size_a - common and b = size_b - common
     // == min(A - common, B - common, common)
     // == min(min(A, B) - common, common)
-    size_t c = common(a, b);
-    return min(min(a.size(), b.size()) - c, c);
+    size_t c = common(a.tags, b.tags);
+    return min(min(a.tags.size() + a.unique_tags, b.tags.size() + b.unique_tags) - c, c);
 }
 
 void parse_input(vector<Photo> &photos)
@@ -110,23 +109,50 @@ void parse_input(vector<Photo> &photos)
     for (auto &&count : tag_counter)
         cout << ' ' << count;
     cout << endl;
+
+    // simplify (remove unique tags)
+    for (auto &&p : photos)
+    {
+        for (auto t = p.tags.begin(); t != p.tags.end();)
+        {
+            if (tag_counter.at(*t) == 1)
+            {
+                t = p.tags.erase(p.tags.find(*t));
+                ++p.unique_tags;
+            }
+            else
+                ++t;
+        }
+
+        // cout << p << endl;
+        // for (size_t i = 0; i < p.tags.size(); ++i)
+        // {
+        //     int tag = p.tags[i];
+        //     if (tag_counter.at(i) == 1)
+        //     {
+        //         p.tags.erase(p.tags())
+        //     }
+        // }
+    }
 }
 
 void merge_verticals(vector<Photo> &photos)
 {
     Photo *last = nullptr;
     // for (auto p : photos)
-    for (auto p = photos.begin(); p != photos.end(); ++p)
+    for (auto p = photos.begin(); p != photos.end();)
     {
         if (!p->vertical)
-            continue;
-        if (last == nullptr)
+            ++p;
+        else if (last == nullptr)
+        {
             last = &(*p);
+            ++p;
+        }
         else
         {
             last->merge(*p);
-            photos.erase(p);
-            --p; // not sure here
+            p = photos.erase(p);
             last = nullptr;
         }
     }
@@ -157,23 +183,23 @@ int main()
         {
             auto second = photos[_second];
             // cout << "first " << _first << " second " << _second;
-            int s = score(first.tags, second.tags);
+            int s = score(first, second);
             if (s)
                 cout << ' ' << second.id << ':' << s;
             // cout << ' ' << s;
         }
+        cout << endl;
 
         auto current = (double)(clock() - start) / CLOCKS_PER_SEC;
         auto i = _first + 1;
         auto total = photos.size() - 1;
         auto percent = i * 100.0 / total;
         auto remaining = current * (total - i) / i;
-        cout << fixed << setprecision(2);
-        cout << ' ' << current * 1000 << "ms ";
-        cout << percent << '%';
-        cout << " remaining " << remaining / 60 << "min";
-
-        cout << endl;
+        cerr << fixed << setprecision(2);
+        cerr << ' ' << current * 1000 << "ms ";
+        cerr << percent << '%';
+        cerr << " remaining " << remaining / 60 << "min";
+        cerr << endl;
     }
 
     return 0;
