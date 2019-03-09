@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <iostream>
-#include <map>
-#include <set>
-#include <string>
-#include <vector>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -15,9 +10,9 @@ struct Photo
     set<int> tags;
     int unique_tags = 0;
 
-    void merge(Photo &other)
+    void merge(Photo const &other)
     {
-        auto i = tags.begin();
+        // auto i = tags.begin();
         // set()
         for (auto &&ot : other.tags)
             tags.insert(ot);
@@ -40,7 +35,7 @@ ostream &operator<<(ostream &os, const Photo &p)
 }
 
 template <class T>
-size_t common(T a, T b)
+size_t common(const T &a, const T &b)
 {
     size_t c = 0;
     auto x = a.begin();
@@ -62,7 +57,7 @@ size_t common(T a, T b)
 }
 
 template <class T>
-size_t score(T a, T b)
+size_t score(const T &a, const T &b)
 {
     // min(a, b, common), with a = size_a - common and b = size_b - common
     // == min(A - common, B - common, common)
@@ -74,7 +69,7 @@ size_t score(T a, T b)
 void parse_input(vector<Photo> &photos)
 {
     map<string, int> all_tags; // map tags to ints
-    vector<int> tag_counter;   // count the occurence of each tag
+    vector<int> tag_counter;   // count the occurrence of each tag
 
     int current_id = -1;
     for (auto &&photo : photos)
@@ -83,7 +78,7 @@ void parse_input(vector<Photo> &photos)
         char orient;
         cin >> orient;
         photo.vertical = orient == 'V';
-        int tag_count;
+        size_t tag_count;
         cin >> tag_count;
         // photo.tags.resize(tag_count);
         // for (auto &&tag : photo.tags)
@@ -111,7 +106,7 @@ void parse_input(vector<Photo> &photos)
         // cout << photo << endl;
     }
 
-    cout << "tag occurence";
+    cout << "tag occurrence";
     for (auto &&count : tag_counter)
         cout << ' ' << count;
     cout << endl;
@@ -131,6 +126,7 @@ void merge_verticals(vector<Photo> &photos)
         {
             last->merge(*p);
             photos.erase(p);
+            --p; // not sure here
             last = nullptr;
         }
     }
@@ -138,6 +134,9 @@ void merge_verticals(vector<Photo> &photos)
 
 int main()
 {
+    ios_base::sync_with_stdio(false);
+    cin.tie(nullptr);
+
     int photo_count;
     cin >> photo_count;
 
@@ -149,6 +148,7 @@ int main()
     // for (auto &&p : photos)
     //     cout << p << endl;
 
+    auto start = clock();
     for (size_t _first = 0; _first < photos.size() - 1; ++_first)
     {
         auto first = photos[_first];
@@ -158,9 +158,22 @@ int main()
             auto second = photos[_second];
             // cout << "first " << _first << " second " << _second;
             int s = score(first.tags, second.tags);
+            if (s)
+                cout << ' ' << second.id << ':' << s;
             // cout << ' ' << s;
         }
-        cout << '\n';
+
+        auto current = (double)(clock() - start) / CLOCKS_PER_SEC;
+        auto i = _first + 1;
+        auto total = photos.size() - 1;
+        auto percent = i * 100.0 / total;
+        auto remaining = current * (total - i) / i;
+        cout << fixed << setprecision(2);
+        cout << ' ' << current * 1000 << "ms ";
+        cout << percent << '%';
+        cout << " remaining " << remaining / 60 << "min";
+
+        cout << endl;
     }
 
     return 0;
