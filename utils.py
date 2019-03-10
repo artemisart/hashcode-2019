@@ -10,7 +10,7 @@ class Photo:
         self.id = id
 
     def __repr__(self):
-        o = 'H' if self.vertical else 'V'
+        o = 'V' if self.vertical else 'H'
         return f'({o} id:{self.id} ntags:{len(self.tags)} tags:{self.tags})'
 
 
