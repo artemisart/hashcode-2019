@@ -2,6 +2,7 @@
 
 import sys
 from collections import Counter, defaultdict
+from itertools import combinations
 
 import networkx as nx
 
@@ -20,24 +21,32 @@ def main():
     err('unique tags', len(all_tags))
     # lines = sys.stdin
 
-    slides = []
-    last_vertical = None
+    horizontals, verticals = [], []
     for photo in photos:
-        if photo.vertical:
-            if last_vertical is None:
-                last_vertical = photo
-            else:
-                slides.append([last_vertical, photo])
-                last_vertical = None
-        else:
-            slides.append([photo])
-    photos = []
-    for slide in slides:
-        if len(slide) == 1:
-            photos.append(slide[0])
-        else:
-            a, b = slide
-            photos.append(Photo(False, a.tags | b.tags, f'{a.id} {b.id}'))
+        (verticals if photo.vertical else horizontals).append(photo)
+
+    v_by_tags = {}
+    for v in verticals:
+        for tag in v.tags:
+            v_by_tags.setdefault(tag, []).append(v)
+    gv = nx.Graph()
+    for a, b in combinations(verticals, 2):
+        c = len(a.tags & b.tags)
+        if c == 0:
+            gv.add_edge(a, b)
+    ordered = nx.dfs_preorder_nodes(gv)
+    v_merged = [
+        Photo(False, a.tags | b.tags, f'{a.id} f{b.id}')
+        for a, b in zip(ordered[::2], ordered[1::2])
+    ]
+
+    photos = horizontals + v_merged
+    # for slide in slides:
+    #     if len(slide) == 1:
+    #         photos.append(slide[0])
+    #     else:
+    #         a, b = slide
+    #         photos.append(Photo(False, a.tags | b.tags, f'{a.id} {b.id}'))
     err(photos)
 
     # def parse_line(line):
