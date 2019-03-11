@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import subprocess
@@ -41,13 +41,13 @@ def main():
     files = sys.argv[1:]
     # err(files)
     models = [file for file in files if file.endswith('.py')]
-    datasets = [file for file in files if file.endswith('.txt')]
+    datasets = [file for file in files if file.endswith('.txt') or file.endswith('.in')]
 
     if not models:
         err("no model in args (.py file)")
         exit(1)
     if not datasets:
-        err("no dataset in args (.txt file)")
+        err("no dataset in args (.txt or .in file)")
         exit(1)
 
     for file in files:
