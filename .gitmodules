@@ -1,0 +1,3 @@
+[submodule "go-runner"]
+	path = go-runner
+	url = git@github.com:efugier/hashcode-runner.git
